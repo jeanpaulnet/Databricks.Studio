@@ -26,8 +26,8 @@ public class AnalyticsManageController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
-    // GET api/analytics/manage/get/{id}
-    [HttpGet("get/{id:guid}")]
+    // GET api/analytics/manage/{id}
+    [HttpGet("{id:guid}")]
     public async Task<IActionResult> Get(Guid id, CancellationToken ct = default)
     {
         var result = await _manager.GetAnalyticsByIdAsync(id, ct);
@@ -43,8 +43,8 @@ public class AnalyticsManageController : ControllerBase
         return result.Success ? CreatedAtAction(nameof(Get), new { id = result.Data!.Id }, result) : BadRequest(result);
     }
 
-    // PUT api/analytics/manage/update/{id}
-    [HttpPut("update/{id:guid}")]
+    // PUT api/analytics/manage/{id}
+    [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateAnalyticsDto dto, CancellationToken ct = default)
     {
         var actionBy = User.Identity?.Name ?? "anonymous";
@@ -52,8 +52,8 @@ public class AnalyticsManageController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
-    // DELETE api/analytics/manage/delete/{id}
-    [HttpDelete("delete/{id:guid}")]
+    // DELETE api/analytics/manage/{id}
+    [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct = default)
     {
         var actionBy = User.Identity?.Name ?? "anonymous";

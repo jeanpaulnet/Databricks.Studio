@@ -32,5 +32,10 @@ export const routes: Routes = [
     loadComponent: () => import('./features/review/review-list/review-list.component')
       .then(m => m.ReviewListComponent)
   },
+  {
+    path: 'chat',
+    loadComponent: () => import('./features/chat/chat.component')
+      .then(m => m.ChatComponent)
+  },
   { path: '**', redirectTo: 'analytics' }
 ];

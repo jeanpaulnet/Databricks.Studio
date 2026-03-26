@@ -19,9 +19,9 @@ export class AnalyticsService {
     return this.http.get<ApiResponse<PagedResult<AnalyticsListItem>>>(`${this.base}/manage/list`, { params });
   }
 
-  // GET /api/analytics/manage/get/{id}
+  // GET /api/analytics/manage/{id}
   getById(id: string): Observable<ApiResponse<Analytics>> {
-    return this.http.get<ApiResponse<Analytics>>(`${this.base}/manage/get/${id}`);
+    return this.http.get<ApiResponse<Analytics>>(`${this.base}/manage/${id}`);
   }
 
   // POST /api/analytics/manage/create
@@ -29,14 +29,14 @@ export class AnalyticsService {
     return this.http.post<ApiResponse<Analytics>>(`${this.base}/manage/create`, dto);
   }
 
-  // PUT /api/analytics/manage/update/{id}
+  // PUT /api/analytics/manage/{id}
   update(id: string, dto: UpdateAnalytics): Observable<ApiResponse<Analytics>> {
-    return this.http.put<ApiResponse<Analytics>>(`${this.base}/manage/update/${id}`, dto);
+    return this.http.put<ApiResponse<Analytics>>(`${this.base}/manage/${id}`, dto);
   }
 
-  // DELETE /api/analytics/manage/delete/{id}
+  // DELETE /api/analytics/manage/{id}
   delete(id: string): Observable<ApiResponse<boolean>> {
-    return this.http.delete<ApiResponse<boolean>>(`${this.base}/manage/delete/${id}`);
+    return this.http.delete<ApiResponse<boolean>>(`${this.base}/manage/${id}`);
   }
 
   // POST /api/analytics/review/approve/{id}

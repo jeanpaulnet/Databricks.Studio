@@ -13,6 +13,7 @@ public interface IStudioManager
     Task<ApiResponse<bool>> DeleteAnalyticsAsync(Guid id, string actionBy, CancellationToken ct = default);
     Task<ApiResponse<AnalyticsDto>> GetAnalyticsByIdAsync(Guid id, CancellationToken ct = default);
     Task<ApiResponse<PagedResult<AnalyticsListDto>>> ListAnalyticsAsync(int page, int pageSize, CancellationToken ct = default);
+    Task<ApiResponse<AnalyticsSummaryDto>> GetAnalyticsSummaryAsync(CancellationToken ct = default);
     Task<ApiResponse<AnalyticsDto>> ApproveAnalyticsAsync(Guid id, ReviewAnalyticsDto dto, CancellationToken ct = default);
     Task<ApiResponse<AnalyticsDto>> RejectAnalyticsAsync(Guid id, ReviewAnalyticsDto dto, CancellationToken ct = default);
 

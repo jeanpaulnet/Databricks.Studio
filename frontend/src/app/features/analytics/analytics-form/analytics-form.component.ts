@@ -24,6 +24,9 @@ import { AnalyticsService } from '../../../core/services/analytics.service';
         <mat-card-title>{{ isEdit ? 'Edit' : 'New' }} Analytics</mat-card-title>
       </mat-card-header>
       <mat-card-content>
+        <div *ngIf="loading" class="loading-overlay">
+          <mat-spinner diameter="40" />
+        </div>
         <form [formGroup]="form" (ngSubmit)="submit()">
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Name</mat-label>
@@ -53,12 +56,14 @@ import { AnalyticsService } from '../../../core/services/analytics.service';
     .form-card { max-width: 600px; margin: 0 auto; }
     .full-width { width: 100%; margin-bottom: 16px; }
     .actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 8px; }
+    .loading-overlay { display: flex; justify-content: center; padding: 24px; }
   `]
 })
 export class AnalyticsFormComponent implements OnInit {
   form!: FormGroup;
   isEdit = false;
   saving = false;
+  loading = false;
   private id?: string;
 
   constructor(
@@ -79,8 +84,22 @@ export class AnalyticsFormComponent implements OnInit {
     this.isEdit = !!this.id;
 
     if (this.isEdit && this.id) {
-      this.analyticsService.getById(this.id).subscribe(res => {
-        if (res.data) this.form.patchValue(res.data);
+      this.loading = true;
+      this.analyticsService.getById(this.id).subscribe({
+        next: res => {
+          if (res.data) {
+            this.form.patchValue({ name: res.data.name, description: res.data.description });
+          } else {
+            this.snackBar.open('Analytics not found', 'Dismiss', { duration: 3000 });
+            this.router.navigate(['/analytics']);
+          }
+          this.loading = false;
+        },
+        error: () => {
+          this.snackBar.open('Failed to load analytics', 'Dismiss', { duration: 3000 });
+          this.loading = false;
+          this.router.navigate(['/analytics']);
+        }
       });
     }
   }

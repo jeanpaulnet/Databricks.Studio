@@ -95,6 +95,22 @@ public class StudioManager : IStudioManager
         return ApiResponse<PagedResult<AnalyticsListDto>>.Ok(new PagedResult<AnalyticsListDto>(items, total, page, pageSize));
     }
 
+    public async Task<ApiResponse<AnalyticsSummaryDto>> GetAnalyticsSummaryAsync(CancellationToken ct = default)
+    {
+        var groups = await _db.Analytics
+            .AsNoTracking()
+            .GroupBy(x => x.Status)
+            .Select(g => new { Status = g.Key, Count = g.Count(), Total = g.Sum(x => x.Value) })
+            .ToListAsync(ct);
+
+        var byStatus = groups.Select(g => new StatusCountDto(g.Status.ToString(), g.Count, g.Total));
+        var total = groups.Sum(g => g.Count);
+        var totalValue = groups.Sum(g => g.Total);
+        var avg = total > 0 ? totalValue / total : 0;
+
+        return ApiResponse<AnalyticsSummaryDto>.Ok(new AnalyticsSummaryDto(total, totalValue, avg, byStatus));
+    }
+
     public async Task<ApiResponse<AnalyticsDto>> ApproveAnalyticsAsync(Guid id, ReviewAnalyticsDto dto, CancellationToken ct = default)
     {
         var entity = await _db.Analytics.FindAsync([id], ct);

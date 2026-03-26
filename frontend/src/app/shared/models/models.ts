@@ -78,3 +78,17 @@ export const AnalyticsStatusLabels: Record<number, string> = {
 export const AnalyticsRunStatusLabels: Record<number, string> = {
   0: 'Queued', 1: 'Started', 2: 'Completed', 3: 'Terminated'
 };
+
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface ChatRequest {
+  message: string;
+  history: ChatMessage[];
+}
+
+export interface ChatResponse {
+  reply: string;
+}

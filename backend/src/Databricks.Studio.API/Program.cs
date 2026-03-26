@@ -1,3 +1,4 @@
+using Databricks.Studio.API.McpTools;
 using Databricks.Studio.Entity.Data;
 using Databricks.Studio.Managers;
 using Databricks.Studio.Shared.Constants;
@@ -30,6 +31,9 @@ builder.Services.AddDbContext<StudioDbContext>(options =>
 // ── Managers ──────────────────────────────────────────────────────────────────
 builder.Services.AddManagers();
 
+// ── Anthropic ─────────────────────────────────────────────────────────────────
+builder.Services.Configure<AnthropicOptions>(builder.Configuration.GetSection("Anthropic"));
+
 // ── CORS ──────────────────────────────────────────────────────────────────────
 builder.Services.AddCors(options =>
 {
@@ -50,6 +54,11 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new() { Title = "Databricks Studio API", Version = "v1" });
 });
 
+// ── MCP Server ────────────────────────────────────────────────────────────────
+builder.Services.AddMcpServer()
+    .WithHttpTransport()
+    .WithTools<AnalyticsMcpTools>();
+
 var app = builder.Build();
 
 // ── Middleware ────────────────────────────────────────────────────────────────
@@ -63,5 +72,6 @@ app.UseHttpsRedirection();
 app.UseCors(AppConstants.CorsPolicies.AllowAngularDev);
 app.UseMiddleware<Databricks.Studio.API.Middleware.ExceptionHandlingMiddleware>();
 app.MapControllers();
+app.MapMcp("/mcp");
 
 app.Run();

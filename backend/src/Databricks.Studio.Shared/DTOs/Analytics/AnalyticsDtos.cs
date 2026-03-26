@@ -29,3 +29,16 @@ public record ReviewAnalyticsDto(
     string ReviewedBy,
     string? Comments
 );
+
+public record StatusCountDto(
+    string Status,
+    int Count,
+    double TotalValue
+);
+
+public record AnalyticsSummaryDto(
+    int TotalCount,
+    double TotalValue,
+    double AverageValue,
+    IEnumerable<StatusCountDto> CountByStatus
+);
