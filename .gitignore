@@ -1,0 +1,25 @@
+# Build output
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+# Node
+node_modules/
+dist/
+.next/
+build/
+frontend/.angular/
+
+# Environment
+.env
+.env.local
+.env*.local
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db

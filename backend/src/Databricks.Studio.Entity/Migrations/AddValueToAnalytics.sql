@@ -1,0 +1,2 @@
+ALTER TABLE [Analytics]
+ADD [Value] FLOAT NOT NULL DEFAULT 0;
