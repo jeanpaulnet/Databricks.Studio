@@ -2,7 +2,9 @@ namespace Databricks.Studio.Shared.DTOs.AnalyticsRun;
 
 public record StartAnalyticsRunDto(
     string JobId,
-    string StartedBy
+    string StartedBy,
+    string? InputJson,
+    string? OutputJson
 );
 
 public record StopAnalyticsRunDto(
@@ -17,5 +19,7 @@ public record AnalyticsRunDto(
     string StatusName,
     DateTime StartedOn,
     DateTime? CompletedOn,
-    DateTime? TerminatedOn
+    DateTime? TerminatedOn,
+    string? InputJson,
+    string? OutputJson
 );

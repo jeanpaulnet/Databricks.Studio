@@ -39,6 +39,16 @@ export class AnalyticsService {
     return this.http.delete<ApiResponse<boolean>>(`${this.base}/manage/${id}`);
   }
 
+  // POST /api/analytics/manage/submit/{id}
+  submit(id: string): Observable<ApiResponse<Analytics>> {
+    return this.http.post<ApiResponse<Analytics>>(`${this.base}/manage/submit/${id}`, {});
+  }
+
+  // POST /api/analytics/manage/publish/{id}
+  publish(id: string): Observable<ApiResponse<Analytics>> {
+    return this.http.post<ApiResponse<Analytics>>(`${this.base}/manage/publish/${id}`, {});
+  }
+
   // POST /api/analytics/review/approve/{id}
   approve(id: string, dto: ReviewAnalytics): Observable<ApiResponse<Analytics>> {
     return this.http.post<ApiResponse<Analytics>>(`${this.base}/review/approve/${id}`, dto);

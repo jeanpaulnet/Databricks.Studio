@@ -8,6 +8,8 @@ public class AnalyticsRunEntity
     public Guid AnalyticsId { get; set; }
     public string JobId { get; set; } = string.Empty;
     public AnalyticsRunStatus Status { get; set; } = AnalyticsRunStatus.Queued;
+    public string? InputJson { get; set; }
+    public string? OutputJson { get; set; }
     public DateTime StartedOn { get; set; }
     public DateTime? CompletedOn { get; set; }
     public DateTime? TerminatedOn { get; set; }

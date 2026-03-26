@@ -8,6 +8,7 @@ using Databricks.Studio.Shared.DTOs.Analytics;
 using Databricks.Studio.Shared.DTOs.AnalyticsRun;
 using Databricks.Studio.Shared.DTOs.History;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Databricks.Studio.Managers;
@@ -16,11 +17,13 @@ public class StudioManager : IStudioManager
 {
     private readonly StudioDbContext _db;
     private readonly ILogger<StudioManager> _logger;
+    private readonly IServiceScopeFactory _scopeFactory;
 
-    public StudioManager(StudioDbContext db, ILogger<StudioManager> logger)
+    public StudioManager(StudioDbContext db, ILogger<StudioManager> logger, IServiceScopeFactory scopeFactory)
     {
         _db = db;
         _logger = logger;
+        _scopeFactory = scopeFactory;
     }
 
     // ── Analytics ─────────────────────────────────────────────────────────────
@@ -111,6 +114,32 @@ public class StudioManager : IStudioManager
         return ApiResponse<AnalyticsSummaryDto>.Ok(new AnalyticsSummaryDto(total, totalValue, avg, byStatus));
     }
 
+    public async Task<ApiResponse<AnalyticsDto>> SubmitAnalyticsAsync(Guid id, string actionBy, CancellationToken ct = default)
+    {
+        var entity = await _db.Analytics.FindAsync([id], ct);
+        if (entity is null) return ApiResponse<AnalyticsDto>.Fail($"Analytics {id} not found.");
+        if (entity.Status != AnalyticsStatus.Draft)
+            return ApiResponse<AnalyticsDto>.Fail("Only Draft analytics can be submitted for review.");
+
+        entity.Status = AnalyticsStatus.Submitted;
+        await RecordHistoryAsync(AppConstants.EntityTypes.Analytics, entity, AppConstants.ActionTypes.Update, actionBy);
+        await _db.SaveChangesAsync(ct);
+        return ApiResponse<AnalyticsDto>.Ok(MapAnalytics(entity));
+    }
+
+    public async Task<ApiResponse<AnalyticsDto>> PublishAnalyticsAsync(Guid id, string actionBy, CancellationToken ct = default)
+    {
+        var entity = await _db.Analytics.FindAsync([id], ct);
+        if (entity is null) return ApiResponse<AnalyticsDto>.Fail($"Analytics {id} not found.");
+        if (entity.Status != AnalyticsStatus.Approved)
+            return ApiResponse<AnalyticsDto>.Fail("Only Approved analytics can be published.");
+
+        entity.Status = AnalyticsStatus.Published;
+        await RecordHistoryAsync(AppConstants.EntityTypes.Analytics, entity, AppConstants.ActionTypes.Update, actionBy);
+        await _db.SaveChangesAsync(ct);
+        return ApiResponse<AnalyticsDto>.Ok(MapAnalytics(entity));
+    }
+
     public async Task<ApiResponse<AnalyticsDto>> ApproveAnalyticsAsync(Guid id, ReviewAnalyticsDto dto, CancellationToken ct = default)
     {
         var entity = await _db.Analytics.FindAsync([id], ct);
@@ -159,7 +188,9 @@ public class StudioManager : IStudioManager
             Id = Guid.NewGuid(),
             AnalyticsId = analyticsId,
             JobId = dto.JobId,
-            Status = AnalyticsRunStatus.Queued,
+            InputJson = dto.InputJson,
+            OutputJson = dto.OutputJson,
+            Status = AnalyticsRunStatus.Started,
             StartedOn = DateTime.UtcNow
         };
 
@@ -168,6 +199,24 @@ public class StudioManager : IStudioManager
         await _db.SaveChangesAsync(ct);
 
         _logger.LogInformation("Started analytics run {RunId} for analytics {AnalyticsId}", run.Id, analyticsId);
+
+        // Mock: auto-complete after 5 minutes
+        var runId = run.Id;
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(TimeSpan.FromMinutes(5));
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<StudioDbContext>();
+            var bgRun = await db.AnalyticsRuns.FindAsync(runId);
+            if (bgRun is { Status: AnalyticsRunStatus.Started })
+            {
+                bgRun.Status = AnalyticsRunStatus.Completed;
+                bgRun.CompletedOn = DateTime.UtcNow;
+                await db.SaveChangesAsync();
+                _logger.LogInformation("Mock completed analytics run {RunId}", runId);
+            }
+        });
+
         return ApiResponse<AnalyticsRunDto>.Ok(MapRun(run));
     }
 
@@ -235,5 +284,5 @@ public class StudioManager : IStudioManager
 
     private static AnalyticsRunDto MapRun(AnalyticsRunEntity r) =>
         new(r.Id, r.AnalyticsId, r.JobId, (int)r.Status, r.Status.ToString(),
-            r.StartedOn, r.CompletedOn, r.TerminatedOn);
+            r.StartedOn, r.CompletedOn, r.TerminatedOn, r.InputJson, r.OutputJson);
 }

@@ -6,6 +6,17 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ── External keys (C:\ai\keys.txt) ────────────────────────────────────────────
+const string keysFile = @"C:\ai\keys.txt";
+if (File.Exists(keysFile))
+{
+    var keys = File.ReadAllLines(keysFile)
+        .Where(l => l.Contains('=') && !l.TrimStart().StartsWith('#'))
+        .Select(l => l.Split('=', 2))
+        .ToDictionary(p => p[0].Trim(), p => p[1].Trim());
+    builder.Configuration.AddInMemoryCollection(keys!);
+}
+
 // ── Logging ───────────────────────────────────────────────────────────────────
 if (builder.Environment.IsDevelopment())
 {

@@ -60,4 +60,22 @@ public class AnalyticsManageController : ControllerBase
         var result = await _manager.DeleteAnalyticsAsync(id, actionBy, ct);
         return result.Success ? Ok(result) : BadRequest(result);
     }
+
+    // POST api/analytics/manage/submit/{id}
+    [HttpPost("submit/{id:guid}")]
+    public async Task<IActionResult> Submit(Guid id, CancellationToken ct = default)
+    {
+        var actionBy = User.Identity?.Name ?? "anonymous";
+        var result = await _manager.SubmitAnalyticsAsync(id, actionBy, ct);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    // POST api/analytics/manage/publish/{id}
+    [HttpPost("publish/{id:guid}")]
+    public async Task<IActionResult> Publish(Guid id, CancellationToken ct = default)
+    {
+        var actionBy = User.Identity?.Name ?? "anonymous";
+        var result = await _manager.PublishAnalyticsAsync(id, actionBy, ct);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
 }

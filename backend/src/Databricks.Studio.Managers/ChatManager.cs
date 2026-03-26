@@ -2,20 +2,27 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Databricks.Studio.Shared.DTOs.Chat;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Databricks.Studio.Managers;
 
-public class ChatManager(HttpClient httpClient, IStudioManager studio, IOptions<AnthropicOptions> options) : IChatManager
+public class ChatManager(HttpClient httpClient, IStudioManager studio, IOptions<AnthropicOptions> options, ILogger<ChatManager> logger) : IChatManager
 {
     private const string ApiUrl = "https://api.anthropic.com/v1/messages";
     private const string SystemPrompt =
-        "You are a helpful data assistant for Databricks Studio. " +
-        "Answer questions about analytics data using the available tools. " +
-        "Be concise and format numbers clearly.";
+        "You are a friendly data assistant for Databricks Studio. " +
+        "Use the available tools to look up analytics data, then answer in plain conversational English. " +
+        "Never return raw JSON or technical data structures. " +
+        "Present numbers clearly (e.g. '5 analytics are currently published'). " +
+        "Use bullet points or short sentences to summarise multiple values. " +
+        "Keep answers concise and easy to read.";
 
     public async Task<ChatResponseDto> ChatAsync(ChatRequestDto request, CancellationToken ct = default)
     {
+        if (string.IsNullOrWhiteSpace(options.Value.ApiKey) || options.Value.ApiKey == "YOUR_ANTHROPIC_API_KEY")
+            return new ChatResponseDto("Anthropic API key is not configured. Please set Anthropic:ApiKey in appsettings.");
+
         var messages = new List<object>();
 
         foreach (var h in request.History ?? [])
@@ -42,7 +49,13 @@ public class ChatManager(HttpClient httpClient, IStudioManager studio, IOptions<
             req.Headers.Add("anthropic-version", "2023-06-01");
 
             var res = await httpClient.SendAsync(req, ct);
-            res.EnsureSuccessStatusCode();
+
+            if (!res.IsSuccessStatusCode)
+            {
+                var errorBody = await res.Content.ReadAsStringAsync(ct);
+                logger.LogError("Anthropic API error {Status}: {Body}", (int)res.StatusCode, errorBody);
+                return new ChatResponseDto($"AI service error ({(int)res.StatusCode}). Check the API key and model configuration.");
+            }
 
             var json = await res.Content.ReadAsStringAsync(ct);
             using var doc = JsonDocument.Parse(json);

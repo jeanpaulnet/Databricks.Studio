@@ -37,8 +37,11 @@ import { Analytics } from '../../../shared/models/models';
           <a mat-button [routerLink]="['/analytics', item.id, 'runs']">
             <mat-icon>play_circle</mat-icon> View Runs
           </a>
-          <button mat-button color="accent" *ngIf="item.status === 0" (click)="submit()">
+          <button mat-button color="accent" *ngIf="item.status === 0" (click)="submit()" [disabled]="acting">
             <mat-icon>send</mat-icon> Submit for Review
+          </button>
+          <button mat-raised-button color="primary" *ngIf="item.status === 2" (click)="publish()" [disabled]="acting">
+            <mat-icon>publish</mat-icon> Publish
           </button>
           <a mat-button routerLink="/analytics">
             <mat-icon>arrow_back</mat-icon> Back
@@ -60,6 +63,7 @@ import { Analytics } from '../../../shared/models/models';
 export class AnalyticsDetailComponent implements OnInit {
   item?: Analytics;
   loading = false;
+  acting = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -77,7 +81,34 @@ export class AnalyticsDetailComponent implements OnInit {
   }
 
   submit(): void {
-    // Placeholder — wire up a "submit for review" endpoint if desired
-    this.snackBar.open('Submitted for review', '', { duration: 2000 });
+    if (!this.item) return;
+    this.acting = true;
+    this.analyticsService.submit(this.item.id).subscribe({
+      next: res => {
+        this.item = res.data ?? this.item;
+        this.snackBar.open('Submitted for review', '', { duration: 2000 });
+        this.acting = false;
+      },
+      error: err => {
+        this.snackBar.open(err?.error?.message ?? 'Submit failed', 'Dismiss', { duration: 3000 });
+        this.acting = false;
+      }
+    });
+  }
+
+  publish(): void {
+    if (!this.item) return;
+    this.acting = true;
+    this.analyticsService.publish(this.item.id).subscribe({
+      next: res => {
+        this.item = res.data ?? this.item;
+        this.snackBar.open('Published — runs can now be started', '', { duration: 3000 });
+        this.acting = false;
+      },
+      error: err => {
+        this.snackBar.open(err?.error?.message ?? 'Publish failed', 'Dismiss', { duration: 3000 });
+        this.acting = false;
+      }
+    });
   }
 }

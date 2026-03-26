@@ -23,9 +23,9 @@ export class AnalyticsRunService {
     return this.http.post<ApiResponse<AnalyticsRun>>(`${this.base}/stop/${runId}`, dto);
   }
 
-  // GET /api/analytics/run/get/{runId}
+  // GET /api/analytics/run/{runId}
   getById(runId: string): Observable<ApiResponse<AnalyticsRun>> {
-    return this.http.get<ApiResponse<AnalyticsRun>>(`${this.base}/get/${runId}`);
+    return this.http.get<ApiResponse<AnalyticsRun>>(`${this.base}/${runId}`);
   }
 
   // GET /api/analytics/run/history/{analyticsId}

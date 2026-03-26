@@ -38,11 +38,23 @@ import { AnalyticsRun, HistoryItem } from '../../../shared/models/models';
             <form [formGroup]="startForm" (ngSubmit)="startRun()">
               <mat-form-field appearance="outline" class="full-width">
                 <mat-label>Databricks Job ID</mat-label>
-                <input matInput formControlName="jobId" placeholder="e.g. databricks-job-123" />
-                <mat-error *ngIf="startForm.get('jobId')?.hasError('required')">Job ID is required</mat-error>
+                <input matInput formControlName="jobId" readonly />
+                <mat-hint>Auto-assigned job identifier</mat-hint>
               </mat-form-field>
-              <button mat-raised-button color="primary" type="submit"
-                      [disabled]="startForm.invalid || starting">
+
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Input</mat-label>
+                <textarea matInput formControlName="inputJson" rows="3"
+                  placeholder="Describe or paste the input data for this run"></textarea>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Output</mat-label>
+                <textarea matInput formControlName="outputJson" rows="3"
+                  placeholder="Describe or paste the expected output data for this run"></textarea>
+              </mat-form-field>
+
+              <button mat-raised-button color="primary" type="submit" [disabled]="starting">
                 <mat-spinner *ngIf="starting" diameter="20" />
                 <mat-icon *ngIf="!starting">play_arrow</mat-icon> Start Run
               </button>
@@ -63,6 +75,8 @@ import { AnalyticsRun, HistoryItem } from '../../../shared/models/models';
             <p><strong>Started:</strong> {{ currentRun.startedOn | date:'medium' }}</p>
             <p *ngIf="currentRun.completedOn"><strong>Completed:</strong> {{ currentRun.completedOn | date:'medium' }}</p>
             <p *ngIf="currentRun.terminatedOn"><strong>Terminated:</strong> {{ currentRun.terminatedOn | date:'medium' }}</p>
+            <p *ngIf="currentRun.inputJson"><strong>Input:</strong> {{ currentRun.inputJson }}</p>
+            <p *ngIf="currentRun.outputJson"><strong>Output:</strong> {{ currentRun.outputJson }}</p>
           </mat-card-content>
           <ng-template #noRun><mat-card-content>No active run.</mat-card-content></ng-template>
           <mat-card-actions *ngIf="currentRun && (currentRun.status === 0 || currentRun.status === 1)">
@@ -120,7 +134,11 @@ export class AnalyticsRunListComponent implements OnInit {
   stopping = false;
   loadingHistory = false;
 
-  startForm = this.fb.group({ jobId: ['', Validators.required] });
+  startForm = this.fb.group({
+    jobId: [{ value: '', disabled: true }, Validators.required],
+    inputJson: [''],
+    outputJson: ['']
+  });
 
   constructor(
     private route: ActivatedRoute,
@@ -131,20 +149,24 @@ export class AnalyticsRunListComponent implements OnInit {
 
   ngOnInit(): void {
     this.analyticsId = this.route.snapshot.paramMap.get('id')!;
+    this.startForm.patchValue({ jobId: 'TBD' });
     this.loadHistory();
   }
 
   startRun(): void {
-    if (this.startForm.invalid) return;
     this.starting = true;
+    const assignedJobId = this.generateJobId();
+    this.startForm.patchValue({ jobId: assignedJobId });
     this.runService.start(this.analyticsId, {
-      jobId: this.startForm.value.jobId!,
-      startedBy: 'anonymous'
+      jobId: assignedJobId,
+      startedBy: 'anonymous',
+      inputJson: this.startForm.value.inputJson ?? undefined,
+      outputJson: this.startForm.value.outputJson ?? undefined
     }).subscribe({
       next: res => {
         this.currentRun = res.data ?? undefined;
-        this.snackBar.open('Run started', '', { duration: 2000 });
-        this.startForm.reset();
+        this.snackBar.open('Run started — completes automatically in 5 minutes', '', { duration: 4000 });
+        this.startForm.patchValue({ jobId: 'TBD', inputJson: '', outputJson: '' });
         this.starting = false;
         this.loadHistory();
       },
@@ -178,5 +200,9 @@ export class AnalyticsRunListComponent implements OnInit {
       next: res => { this.history = res.data ?? []; this.loadingHistory = false; },
       error: () => this.loadingHistory = false
     });
+  }
+
+  private generateJobId(): string {
+    return `JOB-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
   }
 }

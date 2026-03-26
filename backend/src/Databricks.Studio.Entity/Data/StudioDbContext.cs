@@ -29,6 +29,8 @@ public class StudioDbContext : DbContext
             e.ToTable("AnalyticsRuns");
             e.HasKey(x => x.Id);
             e.Property(x => x.JobId).IsRequired().HasMaxLength(256);
+            e.Property(x => x.InputJson).HasMaxLength(4000);
+            e.Property(x => x.OutputJson).HasMaxLength(4000);
             e.Property(x => x.Status).IsRequired();
             e.Property(x => x.StartedOn).IsRequired();
             e.HasOne(x => x.Analytics)

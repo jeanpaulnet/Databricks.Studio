@@ -100,10 +100,9 @@ export class ChatComponent implements AfterViewChecked {
   input = '';
 
   readonly quickQuestions = [
-    'How many analytics are there by status?',
-    'What is the total value of all analytics?',
-    'Show me a summary of analytics data',
-    'Which status has the highest total value?'
+    'How many analytics are there?',
+    'How many published?',
+    'What is the Total Value of all published analytics?'
   ];
 
   ngAfterViewChecked() {

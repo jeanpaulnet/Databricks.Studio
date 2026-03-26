@@ -34,8 +34,8 @@ public class AnalyticsRunController : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
-    // GET api/analytics/run/get/{runId}
-    [HttpGet("get/{runId:guid}")]
+    // GET api/analytics/run/{runId}
+    [HttpGet("{runId:guid}")]
     public async Task<IActionResult> Get(Guid runId, CancellationToken ct = default)
     {
         var result = await _manager.GetRunByIdAsync(runId, ct);

@@ -51,11 +51,15 @@ export interface AnalyticsRun {
   startedOn: string;
   completedOn?: string;
   terminatedOn?: string;
+  inputJson?: string;
+  outputJson?: string;
 }
 
 export interface StartAnalyticsRun {
   jobId: string;
   startedBy: string;
+  inputJson?: string;
+  outputJson?: string;
 }
 
 export interface StopAnalyticsRun {
