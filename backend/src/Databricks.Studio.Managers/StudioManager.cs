@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Databricks.Studio.Entity.Data;
 using Databricks.Studio.Entity.Entities;
 using Databricks.Studio.Entity.Enumerations;
@@ -92,7 +93,7 @@ public class StudioManager : IStudioManager
             .OrderBy(x => x.Name)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(x => new AnalyticsListDto(x.Id, x.Name, (int)x.Status, x.Status.ToString()))
+            .Select(x => new AnalyticsListDto(x.Id, x.Name, x.Description, x.Value, (int)x.Status, x.Status.ToString()))
             .ToListAsync(ct);
 
         return ApiResponse<PagedResult<AnalyticsListDto>>.Ok(new PagedResult<AnalyticsListDto>(items, total, page, pageSize));
@@ -265,13 +266,18 @@ public class StudioManager : IStudioManager
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
+    private static readonly JsonSerializerOptions _historyJsonOptions = new()
+    {
+        ReferenceHandler = ReferenceHandler.IgnoreCycles
+    };
+
     private Task RecordHistoryAsync<T>(string entityType, T entity, string actionType, string actionBy)
     {
         _db.History.Add(new HistoryEntity
         {
             Id = Guid.NewGuid(),
             EntityType = entityType,
-            EntityJson = JsonSerializer.Serialize(entity),
+            EntityJson = JsonSerializer.Serialize(entity, _historyJsonOptions),
             ActionType = actionType,
             ActionBy = actionBy,
             ActionOn = DateTime.UtcNow

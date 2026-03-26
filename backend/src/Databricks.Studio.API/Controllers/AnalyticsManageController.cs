@@ -18,6 +18,14 @@ public class AnalyticsManageController : ControllerBase
         _logger = logger;
     }
 
+    // GET api/analytics/manage/summary
+    [HttpGet("summary")]
+    public async Task<IActionResult> Summary(CancellationToken ct = default)
+    {
+        var result = await _manager.GetAnalyticsSummaryAsync(ct);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
     // GET api/analytics/manage/list
     [HttpGet("list")]
     public async Task<IActionResult> List([FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)

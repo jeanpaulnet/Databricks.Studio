@@ -23,6 +23,8 @@ export interface Analytics {
 export interface AnalyticsListItem {
   id: string;
   name: string;
+  description?: string;
+  value: number;
   status: number;
   statusName: string;
 }
@@ -82,6 +84,19 @@ export const AnalyticsStatusLabels: Record<number, string> = {
 export const AnalyticsRunStatusLabels: Record<number, string> = {
   0: 'Queued', 1: 'Started', 2: 'Completed', 3: 'Terminated'
 };
+
+export interface StatusCount {
+  status: string;
+  count: number;
+  totalValue: number;
+}
+
+export interface AnalyticsSummary {
+  totalCount: number;
+  totalValue: number;
+  averageValue: number;
+  countByStatus: StatusCount[];
+}
 
 export interface ChatMessage {
   role: 'user' | 'assistant';

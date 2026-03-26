@@ -21,6 +21,8 @@ public record AnalyticsDto(
 public record AnalyticsListDto(
     Guid Id,
     string Name,
+    string? Description,
+    double Value,
     int Status,
     string StatusName
 );

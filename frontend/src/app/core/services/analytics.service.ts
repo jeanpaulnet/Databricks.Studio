@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
-  ApiResponse, Analytics, AnalyticsListItem, CreateAnalytics,
+  ApiResponse, Analytics, AnalyticsListItem, AnalyticsSummary, CreateAnalytics,
   UpdateAnalytics, ReviewAnalytics, PagedResult
 } from '../../shared/models/models';
 
@@ -12,6 +12,11 @@ export class AnalyticsService {
   private readonly base = `${environment.apiBaseUrl}/api/analytics`;
 
   constructor(private http: HttpClient) {}
+
+  // GET /api/analytics/manage/summary
+  getSummary(): Observable<ApiResponse<AnalyticsSummary>> {
+    return this.http.get<ApiResponse<AnalyticsSummary>>(`${this.base}/manage/summary`);
+  }
 
   // GET /api/analytics/manage/list
   list(page = 1, pageSize = 20): Observable<ApiResponse<PagedResult<AnalyticsListItem>>> {

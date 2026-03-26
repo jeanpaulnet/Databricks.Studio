@@ -4,7 +4,8 @@
       "Bash(cmd /c \"gh auth status\")",
       "Bash(cmd /c \"gh auth status 2>&1\")",
       "Bash(cmd /c \"gh --version 2>&1 && gh auth status 2>&1\")",
-      "Bash(powershell -Command \"gh --version; gh auth status\")"
+      "Bash(powershell -Command \"gh --version; gh auth status\")",
+      "Bash(npm install:*)"
     ]
   }
 }
