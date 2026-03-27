@@ -38,6 +38,9 @@ public class StudioManager : IStudioManager
             Id = Guid.NewGuid(),
             Name = dto.Name,
             Description = dto.Description,
+            Value = dto.Value,
+            MajorVersion = 1,
+            MinorVersion = 0,
             Status = AnalyticsStatus.Draft
         };
 
@@ -54,13 +57,45 @@ public class StudioManager : IStudioManager
         if (entity is null)
             return ApiResponse<AnalyticsDto>.Fail($"Analytics {id} not found.");
 
-        entity.Name = dto.Name;
-        entity.Description = dto.Description;
+        if (entity.Status == AnalyticsStatus.Draft)
+        {
+            // Draft → update in place, bump minor version
+            entity.Name = dto.Name;
+            entity.Description = dto.Description;
+            entity.Value = dto.Value;
+            entity.MinorVersion += 1;
 
-        await RecordHistoryAsync(AppConstants.EntityTypes.Analytics, entity, AppConstants.ActionTypes.Update, actionBy);
-        await _db.SaveChangesAsync(ct);
+            await RecordHistoryAsync(AppConstants.EntityTypes.Analytics, entity, AppConstants.ActionTypes.Update, actionBy);
+            await _db.SaveChangesAsync(ct);
 
-        return ApiResponse<AnalyticsDto>.Ok(MapAnalytics(entity));
+            return ApiResponse<AnalyticsDto>.Ok(MapAnalytics(entity));
+        }
+        else
+        {
+            // Non-draft (Submitted / Approved / Published) → create new Draft, leave original intact
+            var draft = new AnalyticsEntity
+            {
+                Id = Guid.NewGuid(),
+                Name = dto.Name,
+                Description = dto.Description,
+                Value = dto.Value,
+                MajorVersion = entity.MajorVersion,
+                MinorVersion = entity.MinorVersion + 1,
+                Status = AnalyticsStatus.Draft,
+                // Link back to the root of this analytics family
+                OriginalId = entity.OriginalId ?? entity.Id
+            };
+
+            _db.Analytics.Add(draft);
+            await RecordHistoryAsync(AppConstants.EntityTypes.Analytics, draft, AppConstants.ActionTypes.Create, actionBy);
+            await _db.SaveChangesAsync(ct);
+
+            _logger.LogInformation(
+                "Created new draft v{Major}.{Minor} from analytics {SourceId}",
+                draft.MajorVersion, draft.MinorVersion, id);
+
+            return ApiResponse<AnalyticsDto>.Ok(MapAnalytics(draft));
+        }
     }
 
     public async Task<ApiResponse<bool>> DeleteAnalyticsAsync(Guid id, string actionBy, CancellationToken ct = default)
@@ -93,7 +128,7 @@ public class StudioManager : IStudioManager
             .OrderBy(x => x.Name)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(x => new AnalyticsListDto(x.Id, x.Name, x.Description, x.Value, (int)x.Status, x.Status.ToString()))
+            .Select(x => new AnalyticsListDto(x.Id, x.Name, x.Description, x.Value, x.MajorVersion, x.MinorVersion, (int)x.Status, x.Status.ToString(), x.OriginalId))
             .ToListAsync(ct);
 
         return ApiResponse<PagedResult<AnalyticsListDto>>.Ok(new PagedResult<AnalyticsListDto>(items, total, page, pageSize));
@@ -136,6 +171,8 @@ public class StudioManager : IStudioManager
             return ApiResponse<AnalyticsDto>.Fail("Only Approved analytics can be published.");
 
         entity.Status = AnalyticsStatus.Published;
+        entity.MajorVersion += 1;   // bump major version on publish
+        entity.MinorVersion = 0;
         await RecordHistoryAsync(AppConstants.EntityTypes.Analytics, entity, AppConstants.ActionTypes.Update, actionBy);
         await _db.SaveChangesAsync(ct);
         return ApiResponse<AnalyticsDto>.Ok(MapAnalytics(entity));
@@ -191,6 +228,7 @@ public class StudioManager : IStudioManager
             JobId = dto.JobId,
             InputJson = dto.InputJson,
             OutputJson = dto.OutputJson,
+            MajorVersion = dto.MajorVersion > 0 ? dto.MajorVersion : analytics.MajorVersion,
             Status = AnalyticsRunStatus.Started,
             StartedOn = DateTime.UtcNow
         };
@@ -286,9 +324,9 @@ public class StudioManager : IStudioManager
     }
 
     private static AnalyticsDto MapAnalytics(AnalyticsEntity e) =>
-        new(e.Id, e.Name, e.Description, (int)e.Status, e.Status.ToString());
+        new(e.Id, e.Name, e.Description, e.Value, e.MajorVersion, e.MinorVersion, (int)e.Status, e.Status.ToString(), e.OriginalId);
 
     private static AnalyticsRunDto MapRun(AnalyticsRunEntity r) =>
         new(r.Id, r.AnalyticsId, r.JobId, (int)r.Status, r.Status.ToString(),
-            r.StartedOn, r.CompletedOn, r.TerminatedOn, r.InputJson, r.OutputJson);
+            r.StartedOn, r.CompletedOn, r.TerminatedOn, r.InputJson, r.OutputJson, r.MajorVersion);
 }

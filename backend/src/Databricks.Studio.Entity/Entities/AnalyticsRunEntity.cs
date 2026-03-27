@@ -10,6 +10,7 @@ public class AnalyticsRunEntity
     public AnalyticsRunStatus Status { get; set; } = AnalyticsRunStatus.Queued;
     public string? InputJson { get; set; }
     public string? OutputJson { get; set; }
+    public int MajorVersion { get; set; } = 1;
     public DateTime StartedOn { get; set; }
     public DateTime? CompletedOn { get; set; }
     public DateTime? TerminatedOn { get; set; }

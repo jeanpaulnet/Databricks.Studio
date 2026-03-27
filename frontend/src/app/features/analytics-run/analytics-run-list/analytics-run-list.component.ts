@@ -12,7 +12,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatSelectModule } from '@angular/material/select';
 import { AnalyticsRunService } from '../../../core/services/analytics-run.service';
+import { AnalyticsService } from '../../../core/services/analytics.service';
 import { AnalyticsRun, HistoryItem } from '../../../shared/models/models';
 
 @Component({
@@ -21,7 +23,7 @@ import { AnalyticsRun, HistoryItem } from '../../../shared/models/models';
   imports: [
     CommonModule, RouterLink, ReactiveFormsModule,
     MatTableModule, MatButtonModule, MatIconModule, MatChipsModule,
-    MatCardModule, MatFormFieldModule, MatInputModule,
+    MatCardModule, MatFormFieldModule, MatInputModule, MatSelectModule,
     MatProgressSpinnerModule, MatSnackBarModule, MatTabsModule
   ],
   template: `
@@ -36,11 +38,23 @@ import { AnalyticsRun, HistoryItem } from '../../../shared/models/models';
         <mat-card class="tab-card">
           <mat-card-content>
             <form [formGroup]="startForm" (ngSubmit)="startRun()">
-              <mat-form-field appearance="outline" class="full-width">
-                <mat-label>Databricks Job ID</mat-label>
-                <input matInput formControlName="jobId" readonly />
-                <mat-hint>Auto-assigned job identifier</mat-hint>
-              </mat-form-field>
+              <div class="run-top-row">
+                <mat-form-field appearance="outline" class="job-id-field">
+                  <mat-label>Databricks Job ID</mat-label>
+                  <input matInput formControlName="jobId" readonly />
+                  <mat-hint>Auto-assigned on start</mat-hint>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="version-field">
+                  <mat-label>Major Version</mat-label>
+                  <mat-select formControlName="majorVersion">
+                    <mat-option *ngFor="let v of majorVersionOptions" [value]="v">
+                      v{{ v }}.x
+                    </mat-option>
+                  </mat-select>
+                  <mat-hint>Latest auto-selected</mat-hint>
+                </mat-form-field>
+              </div>
 
               <mat-form-field appearance="outline" class="full-width">
                 <mat-label>Input</mat-label>
@@ -69,6 +83,7 @@ import { AnalyticsRun, HistoryItem } from '../../../shared/models/models';
           <mat-card-content *ngIf="currentRun; else noRun">
             <p><strong>Run ID:</strong> {{ currentRun.id }}</p>
             <p><strong>Job ID:</strong> {{ currentRun.jobId }}</p>
+            <p><strong>Version:</strong> <span class="version-chip">v{{ currentRun.majorVersion }}.x</span></p>
             <p><strong>Status:</strong>
               <mat-chip [class]="'run-status-' + currentRun.status">{{ currentRun.statusName }}</mat-chip>
             </p>
@@ -119,6 +134,18 @@ import { AnalyticsRun, HistoryItem } from '../../../shared/models/models';
     .tab-card { margin-top: 16px; }
     .full-width { width: 100%; margin-bottom: 16px; }
     .center { display: flex; justify-content: center; padding: 32px; }
+    .run-top-row { display: flex; gap: 16px; margin-bottom: 4px; }
+    .job-id-field { flex: 1; }
+    .version-field { width: 160px; }
+    .version-chip {
+      display: inline-block;
+      background: #1976d2;
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 2px 10px;
+      border-radius: 12px;
+    }
     .run-status-0 { background: #fff3e0 !important; }
     .run-status-1 { background: #e3f2fd !important; }
     .run-status-2 { background: #e8f5e9 !important; }
@@ -133,9 +160,11 @@ export class AnalyticsRunListComponent implements OnInit {
   starting = false;
   stopping = false;
   loadingHistory = false;
+  majorVersionOptions: number[] = [1];
 
   startForm = this.fb.group({
     jobId: [{ value: '', disabled: true }, Validators.required],
+    majorVersion: [1, Validators.required],
     inputJson: [''],
     outputJson: ['']
   });
@@ -143,6 +172,7 @@ export class AnalyticsRunListComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private runService: AnalyticsRunService,
+    private analyticsService: AnalyticsService,
     private snackBar: MatSnackBar,
     private fb: FormBuilder
   ) {}
@@ -150,7 +180,20 @@ export class AnalyticsRunListComponent implements OnInit {
   ngOnInit(): void {
     this.analyticsId = this.route.snapshot.paramMap.get('id')!;
     this.startForm.patchValue({ jobId: 'TBD' });
+    this.loadAnalyticsVersions();
     this.loadHistory();
+  }
+
+  loadAnalyticsVersions(): void {
+    this.analyticsService.getById(this.analyticsId).subscribe({
+      next: res => {
+        if (res.data) {
+          const max = res.data.majorVersion;
+          this.majorVersionOptions = Array.from({ length: max }, (_, i) => i + 1);
+          this.startForm.patchValue({ majorVersion: max });
+        }
+      }
+    });
   }
 
   startRun(): void {
@@ -161,7 +204,8 @@ export class AnalyticsRunListComponent implements OnInit {
       jobId: assignedJobId,
       startedBy: 'anonymous',
       inputJson: this.startForm.value.inputJson ?? undefined,
-      outputJson: this.startForm.value.outputJson ?? undefined
+      outputJson: this.startForm.value.outputJson ?? undefined,
+      majorVersion: this.startForm.value.majorVersion ?? this.majorVersionOptions.at(-1) ?? 1
     }).subscribe({
       next: res => {
         this.currentRun = res.data ?? undefined;

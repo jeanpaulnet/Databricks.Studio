@@ -16,8 +16,12 @@ export interface Analytics {
   id: string;
   name: string;
   description: string;
+  value: number;
+  majorVersion: number;
+  minorVersion: number;
   status: number;
   statusName: string;
+  originalId?: string;
 }
 
 export interface AnalyticsListItem {
@@ -25,18 +29,23 @@ export interface AnalyticsListItem {
   name: string;
   description?: string;
   value: number;
+  majorVersion: number;
+  minorVersion: number;
   status: number;
   statusName: string;
+  originalId?: string;
 }
 
 export interface CreateAnalytics {
   name: string;
   description: string;
+  value: number;
 }
 
 export interface UpdateAnalytics {
   name: string;
   description: string;
+  value: number;
 }
 
 export interface ReviewAnalytics {
@@ -55,6 +64,7 @@ export interface AnalyticsRun {
   terminatedOn?: string;
   inputJson?: string;
   outputJson?: string;
+  majorVersion: number;
 }
 
 export interface StartAnalyticsRun {
@@ -62,6 +72,7 @@ export interface StartAnalyticsRun {
   startedBy: string;
   inputJson?: string;
   outputJson?: string;
+  majorVersion: number;
 }
 
 export interface StopAnalyticsRun {

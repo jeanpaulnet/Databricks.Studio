@@ -2,20 +2,26 @@ namespace Databricks.Studio.Shared.DTOs.Analytics;
 
 public record CreateAnalyticsDto(
     string Name,
-    string Description
+    string Description,
+    double Value = 0
 );
 
 public record UpdateAnalyticsDto(
     string Name,
-    string Description
+    string Description,
+    double Value = 0
 );
 
 public record AnalyticsDto(
     Guid Id,
     string Name,
     string Description,
+    double Value,
+    int MajorVersion,
+    int MinorVersion,
     int Status,
-    string StatusName
+    string StatusName,
+    Guid? OriginalId
 );
 
 public record AnalyticsListDto(
@@ -23,8 +29,11 @@ public record AnalyticsListDto(
     string Name,
     string? Description,
     double Value,
+    int MajorVersion,
+    int MinorVersion,
     int Status,
-    string StatusName
+    string StatusName,
+    Guid? OriginalId
 );
 
 public record ReviewAnalyticsDto(

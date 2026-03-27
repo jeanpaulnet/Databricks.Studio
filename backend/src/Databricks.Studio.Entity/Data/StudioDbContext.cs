@@ -22,6 +22,9 @@ public class StudioDbContext : DbContext
             e.Property(x => x.Name).IsRequired().HasMaxLength(256);
             e.Property(x => x.Description).HasMaxLength(2000);
             e.Property(x => x.Status).IsRequired();
+            e.Property(x => x.MajorVersion).IsRequired().HasDefaultValue(1);
+            e.Property(x => x.MinorVersion).IsRequired().HasDefaultValue(0);
+            e.Property(x => x.OriginalId).IsRequired(false);
         });
 
         modelBuilder.Entity<AnalyticsRunEntity>(e =>
@@ -32,6 +35,7 @@ public class StudioDbContext : DbContext
             e.Property(x => x.InputJson).HasMaxLength(4000);
             e.Property(x => x.OutputJson).HasMaxLength(4000);
             e.Property(x => x.Status).IsRequired();
+            e.Property(x => x.MajorVersion).IsRequired().HasDefaultValue(1);
             e.Property(x => x.StartedOn).IsRequired();
             e.HasOne(x => x.Analytics)
              .WithMany(x => x.Runs)

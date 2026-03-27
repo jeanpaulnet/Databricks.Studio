@@ -4,7 +4,8 @@ public record StartAnalyticsRunDto(
     string JobId,
     string StartedBy,
     string? InputJson,
-    string? OutputJson
+    string? OutputJson,
+    int MajorVersion = 1
 );
 
 public record StopAnalyticsRunDto(
@@ -21,5 +22,6 @@ public record AnalyticsRunDto(
     DateTime? CompletedOn,
     DateTime? TerminatedOn,
     string? InputJson,
-    string? OutputJson
+    string? OutputJson,
+    int MajorVersion
 );
